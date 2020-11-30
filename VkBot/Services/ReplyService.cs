@@ -25,13 +25,12 @@ namespace VkBot
             if (isPrivate)
                 return FuckYou;
 
-            var simplified = Simplify(message.Text);
-            var formatted = Split(simplified);
+            var formatted = Split(Simplify(message.Text));
 
             if (_isTagged)
                 return ReplyOnCommand(formatted);
 
-            _memory.Save(simplified);
+            _memory.Save(string.Join(" ", formatted));
             return null;
         }
 
@@ -44,20 +43,19 @@ namespace VkBot
         private string Simplify(string src)
         {
             var pattern = new Regex("[ ;,\t\r ]|[\n]{2}");
-            var spaces = new Regex("[ ]{2,}");
             src = pattern.Replace(src.ToLower(), " ");
-            return spaces.Replace(src, "");
+            return src;
         }
 
         private List<string> Split(string src)
         {
-            var splitted = src.Split(' ').ToList();
+            var splitted = src.Split(' ').Where(x => x.Any()).ToList();
             var first = splitted.First();
             _isTagged = splitted.Any() && BotNames.Any(first.Contains);
             if (_isTagged)
                 splitted = splitted.Skip(1).ToList();
 
-            return splitted.Where(x => x.Any()).ToList();
+            return splitted;
         }
 
         private readonly string[] BotNames = { "saphire", "сапфир" };
