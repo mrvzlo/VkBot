@@ -57,7 +57,7 @@ namespace VkBot
             if (_isTagged)
                 splitted = splitted.Skip(1).ToList();
 
-            return splitted;
+            return splitted.Where(x => x.Any()).ToList();
         }
 
         private readonly string[] BotNames = { "saphire", "сапфир" };
