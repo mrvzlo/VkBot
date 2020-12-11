@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using VkNet.Model;
@@ -20,14 +21,12 @@ namespace VkBot
         {
             if (string.IsNullOrEmpty(message.Text))
                 return null;
-
-            var isPrivate = message.PeerId == message.FromId;
-            if (isPrivate)
-                return FuckYou;
-
+            
             var formatted = Split(Simplify(message.Text));
+            
+            var isPrivate = message.PeerId == message.FromId;
 
-            if (_isTagged)
+            if (_isTagged || isPrivate)
                 return ReplyOnCommand(formatted);
 
             _memory.Save(string.Join(" ", formatted));
@@ -36,14 +35,14 @@ namespace VkBot
 
         private string ReplyOnCommand(List<string> src)
         {
-            var commandType = new BaseCommand(_memory, src).GetSubClass();
-            return commandType?.GetResponse();
+            var commandType = new BaseCommand().GetSubClass(src);
+            return commandType?.GetResponse(src);
         }
 
         private string Simplify(string src)
         {
             var pattern = new Regex("[ ;,\t\r ]|[\n]{2}");
-            src = pattern.Replace(src.ToLower(), " ");
+            src = pattern.Replace(src, " ");
             return src;
         }
 
@@ -51,7 +50,7 @@ namespace VkBot
         {
             var splitted = src.Split(' ').Where(x => x.Any()).ToList();
             var first = splitted.First();
-            _isTagged = splitted.Any() && BotNames.Any(first.Contains);
+            _isTagged = splitted.Any() && BotNames.Any(s => first.Contains(s, StringComparison.InvariantCultureIgnoreCase));
             if (_isTagged)
                 splitted = splitted.Skip(1).ToList();
 

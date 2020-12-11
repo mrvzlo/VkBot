@@ -1,10 +1,16 @@
-﻿namespace VkBot
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace VkBot
 {
     public class PingCommand : BaseCommand
     {
-        public PingCommand(BaseCommand parent) : base(parent)
+        public PingCommand()
         {
-            Responses = new[] { "Я тут", "Да да?", "Слушаю" };
+            Priority = VkBot.Priority.High;
+            Responses = new[] { "Я тут", "Да-да?", "Слушаю" };
         }
+
+        protected override bool Match(List<string> src) => !src.Any();
     }
 }

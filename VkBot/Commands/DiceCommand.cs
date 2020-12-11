@@ -6,17 +6,17 @@ namespace VkBot
 {
     public class DiceCommand : BaseCommand
     {
-        public DiceCommand(BaseCommand parent) : base(parent)
+        public DiceCommand()
         {
             Filters = new[] {"roll", "кинь", "брось"};
         }
 
-        public override string GetResponse()
+        public override string GetResponse(List<string> src)
         {
-            var value = _src.Skip(1).FirstOrDefault();
+            var value = src.Skip(1).FirstOrDefault();
             if (value == null)
                 return "А что бросать то?";
-            value = value.Replace('д', 'd');
+            value = value.ToLower().Replace('д', 'd');
             if (!value.Contains('d'))
                 return "А что бросать то?";
             if (value[0] == 'd')
@@ -42,6 +42,11 @@ namespace VkBot
                 result += random.Next(pair[1]) + 1;
 
             return result.ToString();
+        }
+
+        public override string GetInfo()
+        {
+            return "Сапфир брось XдY\nЯ брошу X раз кубик Y и покажу ответ";
         }
     }
 }

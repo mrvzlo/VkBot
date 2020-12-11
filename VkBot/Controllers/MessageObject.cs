@@ -1,6 +1,6 @@
 ﻿using VkNet.Model;
 
-namespace VkBot.Controllers
+namespace VkBot
 {
     public class MessageObject
     {

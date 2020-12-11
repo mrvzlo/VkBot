@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace VkBot
 {
     public class MagicBallCommand : BaseCommand
     {
-        public MagicBallCommand(BaseCommand parent) : base(parent)
+        public MagicBallCommand()
         {
+            Priority = Priority.Low;
             Filters = new []{"ответь", "скажи" };
             Responses = new[]
             {
@@ -31,6 +33,13 @@ namespace VkBot
                 "Перспективы не очень хорошие",
                 "Сомнительно"
             };
+        }
+
+        protected override bool Match(List<string> src) => src.Any() && (src.Last().Contains('?') || base.Match(src));
+
+        public override string GetInfo()
+        {
+            return "Сапфир скажи ...?\nЯ отвечу на вопрос да, нет или не знаю";
         }
     }
 }

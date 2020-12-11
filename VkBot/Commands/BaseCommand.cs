@@ -1,65 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace VkBot
 {
     public class BaseCommand
     {
-        protected readonly IMemoryService Memory;
+        public bool Enabled { get; set; }
+        public Priority Priority { get; set; }
 
-        public string[] Filters;
+        public string[] Filters { get; set; }
         public string[] Responses;
-        protected readonly List<string> _src;
 
-        protected BaseCommand(BaseCommand parent)
+        public BaseCommand()
         {
-            Memory = parent.Memory;
-            _src = parent._src;
+            Enabled = true;
+            Priority = Priority.Medium;
         }
 
-        public BaseCommand(IMemoryService memory, List<string> src)
+        public BaseCommand GetSubClass(List<string> src) => 
+            GetAllCommands().FirstOrDefault(command => command.Match(src));
+
+        protected virtual bool Match(List<string> src) =>
+            src.Any() && Filters.Any(s => src.First().Contains(s, StringComparison.InvariantCultureIgnoreCase));
+
+        public virtual string GetResponse(List<string> src)
         {
-            Memory = memory;
-            _src = src;
-        }
-
-        public BaseCommand GetSubClass()
-        {
-            if (!_src.Any())
-                return new PingCommand(this);
-
-            var tag = _src.First();
-
-            BaseCommand command = new MagicBallCommand(this);
-            if (command.Match(tag))
-                return command;
-
-            command = new DiceCommand(this);
-            if (command.Match(tag))
-                return command;
-            
-            command = new StartCommand(this);
-            if (command.Match(tag))
-                return command;
-
-            command = new HelpCommand(this);
-            if (command.Match(tag))
-                return command;
-
-            command = new InfoCommand(this);
-            if (command.Match(tag))
-                return command;
-
-            return new NotFoundCommand(this);
-        }
-
-        private bool Match(string src) => Filters.Any(src.Contains);
-
-        public virtual string GetResponse()
-        {
-            var rand = new Random();
+            var rand = new Random(DateTime.Now.Millisecond);
             return Responses[rand.Next(Responses.Length)];
+        }
+
+        public virtual string GetInfo() => string.Empty;
+
+        protected List<BaseCommand> GetAllCommands()
+        {
+            var list = Assembly.GetAssembly(typeof(BaseCommand)).GetTypes()
+                .Where(t => t.IsSubclassOf(typeof(BaseCommand))).AsQueryable()
+                .Select(x => (BaseCommand)Activator.CreateInstance(x))
+                .Where(x => x != null && x.Enabled).OrderBy(x => x.Priority).ToList();
+
+            return list;
         }
     }
 }

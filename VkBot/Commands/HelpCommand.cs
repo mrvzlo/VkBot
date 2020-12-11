@@ -1,14 +1,26 @@
-﻿namespace VkBot
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace VkBot
 {
     public class HelpCommand : BaseCommand
     {
-        public HelpCommand(BaseCommand parent) : base(parent)
+        public HelpCommand()
         {
             Filters = new [] {"помощь", "команды", "help" };
-            Responses = new[] {"Я могу ответить на ваш вопрос, если он подразмевает ответ да или нет.\n" +
-                               "Например: 'Сапфир, скажи, будет ли завтра дождь?'\n" +
-                               "Также вы можете попросить меня бросить кубик.\n" +
-                               "Например: 'Сапфир, брось 2д20'"};
+        }
+
+        public override string GetInfo()
+        {
+            return "Сапфир помощь\nЕсли забыл какую-то из команд, спроси, и я напомню";
+        }
+
+        public override string GetResponse(List<string> src)
+        {
+            var i = 0;
+            return GetAllCommands().Where(x => !string.IsNullOrEmpty(x.GetInfo()))
+                .Aggregate("Список команд:\n", (current, command) => $"{current}\n{++i}) {command.GetInfo()}\nТриггеры: {string.Join(", ", command.Filters)}\n");
         }
     }
 }

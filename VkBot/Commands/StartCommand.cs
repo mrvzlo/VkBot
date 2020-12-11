@@ -2,7 +2,7 @@
 {
     public class StartCommand : BaseCommand
     {
-        public StartCommand(BaseCommand parent) : base(parent)
+        public StartCommand()
         {
             Filters = new [] {"старт", "start", "запуск"};
             Responses = new[] {"Вас приветствует Система Аналитического Поэтапного Формирования Искусственного Разговора, " +
