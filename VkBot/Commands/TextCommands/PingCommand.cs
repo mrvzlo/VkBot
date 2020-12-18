@@ -8,7 +8,7 @@ namespace VkBot
         public PingCommand()
         {
             Priority = VkBot.Priority.High;
-            Responses = new[] { "Я тут", "Да-да?", "Слушаю" };
+            Replies = new[] { "Я тут", "Да-да?", "Слушаю" };
         }
 
         protected override bool Match(List<string> src) => !src.Any();

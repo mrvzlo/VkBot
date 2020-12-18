@@ -1,8 +1,10 @@
-﻿using VkNet.Model;
+﻿using VkBot.Communication;
+using VkNet.Model;
 
 namespace VkBot
 {
     public interface IReplyService
-    { string Generate(Message message);
+    {
+        Response Generate(Message message);
     }
 }

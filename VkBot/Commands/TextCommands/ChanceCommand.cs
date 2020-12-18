@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VkBot.Communication;
 
 namespace VkBot
 {
@@ -10,19 +11,20 @@ namespace VkBot
             Filters = new[] { "chance", "шанс", "вероятность" };
         }
 
-        public override string GetResponse(List<string> src)
+        public override Response GetResponse(List<string> src, UserStatus _)
         {
             var random = new Random(DateTime.Now.Millisecond);
             var first = random.Next(101);
             var second = first == 100 ? 1 : random.Next(10);
-            var result = $"Вероятность этого {first}";
+            var response = new Response(ResponseType.Text) { Content = $"Вероятность этого {first}" };
             if (second == 0)
             {
                 second = random.Next(99) + 1;
-                result += $".{second / 10}{second % 10}";
+                response.Content += $".{second / 10}{second % 10}";
             }
 
-            return $"{result}%";
+            response.Content += "%";
+            return response;
         }
 
         public override string GetInfo()

@@ -1,25 +1,63 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
+using VkBot.Entities;
+using VkBot.Repositories;
 
 namespace VkBot
 {
     public class MemoryService : IMemoryService
     {
-        private readonly string _path;
-        
-        public MemoryService(IConfiguration configuration)
+        private readonly IPairRepository _pairRepository;
+        private readonly ISizeRepository _sizeRepository;
+
+        public MemoryService(ISizeRepository sizeRepository, IPairRepository pairRepository)
         {
-            _path = configuration["Config:MemoryFile"];
+            _sizeRepository = sizeRepository;
+            _pairRepository = pairRepository;
         }
 
-        public void Save(string line)
+        public void Save(List<string> src, string previous)
         {
-            if (!Directory.Exists(_path))
-                Directory.CreateDirectory(_path);
-            using var sw = File.Exists(_path) ? File.AppendText(_path) : File.CreateText(_path);
-            sw.WriteLine(line);
+            foreach (var t in src)
+            {
+                if (string.IsNullOrEmpty(previous)) continue;
+                var pair = new MessagePair { First = previous, Second = t };
+                _pairRepository.Save(pair);
+                previous = t;
+            }
+
+            _sizeRepository.Save(src.Count);
         }
 
-        public int GetMemorizedCount() => File.Exists(_path) ? File.ReadAllLines(_path).Length : 0;
+        public string Generate(string start, int? size = null)
+        {
+            var result = "";
+            for (var i = 0; i < size; i++)
+            {
+                var word = GenerateWord(start);
+                start = word;
+                result += $"{word} ";
+            }
+
+            return result;
+        }
+
+        private string GenerateWord(string start)
+        {
+            var variants = _pairRepository.GetAll(start).Select(x => x.Counts).ToList();
+            var sum = variants.Sum();
+            var rand = new Random(DateTime.Now.Millisecond).Next(sum);
+            var i = 0;
+            for (; i < variants.Count; i++)
+            {
+                rand -= variants[i];
+                if (rand <= 0) break;
+            }
+
+            return _pairRepository.Get(start, i).Second;
+        }
     }
 }

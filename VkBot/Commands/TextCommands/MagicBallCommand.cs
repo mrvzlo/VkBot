@@ -9,7 +9,7 @@ namespace VkBot
         {
             Priority = Priority.Low;
             Filters = new []{"ответь", "скажи" };
-            Responses = new[]
+            Replies = new[]
             {
                 "Бесспорно",
                 "Уже предрешено",

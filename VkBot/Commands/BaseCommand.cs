@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using VkBot.Communication;
 
 namespace VkBot
 {
@@ -11,7 +12,7 @@ namespace VkBot
         public Priority Priority { get; set; }
 
         public string[] Filters { get; set; }
-        public string[] Responses;
+        public string[] Replies;
 
         public BaseCommand()
         {
@@ -19,16 +20,18 @@ namespace VkBot
             Priority = Priority.Medium;
         }
 
-        public BaseCommand GetSubClass(List<string> src) => 
+        public BaseCommand GetSubClass(List<string> src) =>
             GetAllCommands().FirstOrDefault(command => command.Match(src));
 
         protected virtual bool Match(List<string> src) =>
             src.Any() && Filters.Any(s => src.First().Contains(s, StringComparison.InvariantCultureIgnoreCase));
 
-        public virtual string GetResponse(List<string> src)
+        public virtual Response GetResponse(List<string> src, UserStatus user)
         {
             var rand = new Random(DateTime.Now.Millisecond);
-            return Responses[rand.Next(Responses.Length)];
+            var response = new Response(ResponseType.Text)
+            { Content = Replies[rand.Next(Replies.Length)] };
+            return response;
         }
 
         public virtual string GetInfo() => string.Empty;

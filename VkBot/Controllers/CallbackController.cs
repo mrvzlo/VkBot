@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using VkBot.Communication;
 using VkBot.Controllers;
 using VkNet.Abstractions;
 using VkNet.Model;
@@ -63,10 +64,21 @@ namespace VkBot
             try
             {
                 var result = _replyService.Generate(msg);
-                if (result.Contains("http"))
-                    await SendPhoto(result, msg);
-                else
-                    await SendMessage(result, msg);
+                if (result == null) return;
+
+                switch (result.Type)
+                {
+                    case ResponseType.SettingChange:
+                    case ResponseType.None:
+                    case ResponseType.Text:
+                        await SendMessage(result.Content, msg);
+                        return;
+                    case ResponseType.Image:
+                        await SendPhoto(result.Content, msg);
+                        return;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
             catch (Exception e)
             {
