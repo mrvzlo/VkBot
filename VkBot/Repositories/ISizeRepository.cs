@@ -5,6 +5,6 @@ namespace VkBot.Repositories
     public interface ISizeRepository
     {
         public void Save(int size);
-        public int Get();
+        public int GetAverage();
     }
 }

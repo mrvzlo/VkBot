@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
+using VkBot.Entities;
+using VkBot.Repositories;
 using VkNet;
 using VkNet.Abstractions;
 using VkNet.Model;
@@ -32,8 +35,13 @@ namespace VkBot
                 return api;
             });
 
+            services.AddDbContextPool<AppDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("Default")).EnableSensitiveDataLogging());
+
             services.AddScoped<IMemoryService, MemoryService>();
             services.AddScoped<IReplyService, ReplyService>();
+            services.AddScoped<ISizeRepository, SizeRepository>();
+            services.AddScoped<IPairRepository, PairRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using CsQuery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -25,7 +26,6 @@ namespace VkBot
         private readonly IConfiguration _configuration;
         private readonly IReplyService _replyService;
         private readonly IVkApi _vkApi;
-        private const long Admin = 162228043;
 
         public CallbackController(IConfiguration configuration, IVkApi vkApi, IReplyService replyService)
         {
@@ -37,7 +37,9 @@ namespace VkBot
         [HttpGet]
         public IActionResult Check(string msg)
         {
-            var response = _replyService.Generate(new Message { Text = msg, PeerId = Admin, ChatId = Admin, FromId = 0 });
+            var settings = Settings.Get(_configuration["Config:MemoryFile"]);
+            var response = _replyService.GetResponse(
+                new Message { Text = msg, PeerId = settings.Admin, ChatId = settings.Admin, FromId = 0 });
             return new JsonResult(response);
         }
 
@@ -58,12 +60,13 @@ namespace VkBot
 
         private async Task Reply(JsonElement obj)
         {
+            var settings = Settings.Get(_configuration["Config:MemoryFile"]);
             var str = obj.ToString();
             var msg = JsonConvert.DeserializeObject<MessageObject>(str).Message;
 
             try
             {
-                var result = _replyService.Generate(msg);
+                var result = _replyService.GetResponse(msg);
                 if (result == null) return;
 
                 switch (result.Type)
@@ -82,7 +85,8 @@ namespace VkBot
             }
             catch (Exception e)
             {
-                await SendMessage(e.Message + "\n" + e.InnerException?.Message, msg);
+                if (msg.FromId == settings.Admin)
+                    await SendMessage(e.Message + "\n" + e.InnerException?.Message, msg);
             }
         }
 

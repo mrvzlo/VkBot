@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Configuration;
+using CsQuery.ExtensionMethods.Internal;
 using VkBot.Entities;
 using VkBot.Repositories;
 
@@ -21,12 +20,12 @@ namespace VkBot
 
         public void Save(List<string> src, string previous)
         {
-            foreach (var t in src)
+            var first = true;
+            foreach (var t in src.Where(t => !string.IsNullOrEmpty(previous)))
             {
-                if (string.IsNullOrEmpty(previous)) continue;
-                var pair = new MessagePair { First = previous, Second = t };
-                _pairRepository.Save(pair);
+                _pairRepository.Save(previous, t, first ? 3 : 10);
                 previous = t;
+                first = false;
             }
 
             _sizeRepository.Save(src.Count);
@@ -34,20 +33,29 @@ namespace VkBot
 
         public string Generate(string start, int? size = null)
         {
-            var result = "";
+            if (!_pairRepository.Any())
+                return "Я пока ничего не знаю";
+
+            if (string.IsNullOrEmpty(start))
+                start = _pairRepository.GetRandom();
+
+            var result = start;
+            size ??= _sizeRepository.GetAverage();
+
             for (var i = 0; i < size; i++)
             {
-                var word = GenerateWord(start);
-                start = word;
-                result += $"{word} ";
+                var word = FindPair(start);
+                if (word == null) break;
+                start = word.Second;
+                result += $" {start}";
             }
 
-            return result;
+            return result[0].ToUpper() + result.Substring(1).ToLower();
         }
 
-        private string GenerateWord(string start)
+        private MessagePair FindPair(string start)
         {
-            var variants = _pairRepository.GetAll(start).Select(x => x.Counts).ToList();
+            var variants = _pairRepository.GetAll(start).Select(x => x.Count).ToList();
             var sum = variants.Sum();
             var rand = new Random(DateTime.Now.Millisecond).Next(sum);
             var i = 0;
@@ -57,7 +65,7 @@ namespace VkBot
                 if (rand <= 0) break;
             }
 
-            return _pairRepository.Get(start, i).Second;
+            return _pairRepository.Get(start, i);
         }
     }
 }

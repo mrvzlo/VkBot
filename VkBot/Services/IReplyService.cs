@@ -5,6 +5,6 @@ namespace VkBot
 {
     public interface IReplyService
     {
-        Response Generate(Message message);
+        Response GetResponse(Message message);
     }
 }

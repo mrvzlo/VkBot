@@ -1,16 +1,15 @@
-﻿namespace VkBot.Repositories
-{
-    public class SizeRepository : ISizeRepository
-    {
-        public void Save(int size)
-        {
-            //todo
-        }
+﻿using System;
+using System.Linq;
+using VkBot.Entities;
 
-        public int Get()
-        {
-            //todo
-            return 0;
-        }
+namespace VkBot.Repositories
+{
+    public class SizeRepository : BaseRepository<MessageSize>, ISizeRepository
+    {
+        public SizeRepository(AppDbContext dbContext) : base(dbContext) { }
+
+        public void Save(int size) => base.InsertOrUpdate(new MessageSize { Size = size });
+
+        public int GetAverage() => Select().Any() ? (int)Math.Ceiling(Select().Average(x => x.Size)) : 5;
     }
 }
