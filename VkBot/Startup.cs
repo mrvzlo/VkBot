@@ -40,8 +40,11 @@ namespace VkBot
 
             services.AddScoped<IMemoryService, MemoryService>();
             services.AddScoped<IReplyService, ReplyService>();
+            services.AddScoped<ITruthLieGame, TruthLieGame>();
+            services.AddScoped<ITruthLieRepository, TruthLieRepository>();
             services.AddScoped<ISizeRepository, SizeRepository>();
             services.AddScoped<IPairRepository, PairRepository>();
+            services.AddScoped<IUserChatPairRepository, UserChatPairRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,71 +1,71 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using VkBot.Communication;
 using VkNet.Model;
-using Status = VkBot.Communication.Status;
 
 namespace VkBot
 {
     public class ReplyService : IReplyService
     {
         private readonly IMemoryService _memory;
+        private readonly ITruthLieGame _truthLieGame;
         private readonly string _settingsPath;
 
-        public ReplyService(IMemoryService memory, IConfiguration configuration)
+        public ReplyService(IMemoryService memory, IConfiguration configuration, ITruthLieGame truthLieGame)
         {
             _memory = memory;
+            _truthLieGame = truthLieGame;
             _settingsPath = configuration["Config:MemoryFile"];
         }
 
         public Response GetResponse(Message message)
         {
+            _memory.SaveUserChat(message.ChatId, message.UserId);
             if (string.IsNullOrEmpty(message.Text))
                 return null;
 
             var settings = Settings.Get(_settingsPath);
-            var simplified = Simplify(message.Text);
-            var response = new Response(ResponseType.None);
-            var mustReply = simplified.Tagged || message.PeerId == message.FromId;
+            var simplified = new SimplifiedMessage(message, _botNames);
 
-            if (mustReply)
-            {
+            if (settings.Status == BotStatus.TruthOrLieGame)
+                return _truthLieGame.GenerateResponse(simplified);
+
+            var response = new Response(ResponseType.None);
+
+            if (simplified.MustReply)
                 response = ReplyOnCommand(simplified.Words, settings.GetUserStatus(message.FromId));
 
-                if (response.Type == ResponseType.SettingChange && response.Setting != null)
-                    response = settings.Set(response.Setting.Value, response.Content);
-            }
+            response = response.Type switch
+            {
+                ResponseType.SettingChange when response.Setting != null => settings.Set(response.Setting.Value, response.Content),
+                ResponseType.Status => SetupStatusResponse(response, settings),
+                ResponseType.UserPick => SetupUserPickResponse(response, simplified.ChatId),
+               _ => response
+            };
 
-            if (response.Type == ResponseType.None)
+            if (response.Type == ResponseType.None && !simplified.Tagged)
             {
                 _memory.Save(simplified.Words, settings.LastWord);
                 settings.LastWord = simplified.Words.LastOrDefault();
             }
 
-
-            settings.Save(_settingsPath);
+            if (settings.Status == BotStatus.Talk)
+                settings.Save(_settingsPath);
 
             if (response.Type != ResponseType.None)
                 return response;
 
-            var generatedText = GenerateText(settings, 
-                mustReply ? simplified.Words.LastOrDefault() : "",
-                mustReply ? 100 : settings.Frequency);
-
-            if (!string.IsNullOrEmpty(generatedText))
-                response = new Response(ResponseType.Text) { Content = generatedText };
+            if (settings.Status == BotStatus.Talk && (simplified.MustReply || settings.RandomReply()))
+                return GenerateText(simplified);
 
             return response;
         }
 
-        private string GenerateText(Settings settings, string last, int chance)
+        private Response GenerateText(SimplifiedMessage message)
         {
-            if (settings.Status == Status.Mute)
-                return null;
-            var speak = new Random(DateTime.Now.Millisecond).Next(100 - chance) == 0;
-            return speak ? _memory.Generate(last) : null;
+            var last = message.MustReply ? message.Words.LastOrDefault() : null;
+            return new Response(ResponseType.Text) { Content = _memory.Generate(last) };
         }
 
         private Response ReplyOnCommand(List<string> src, UserStatus user)
@@ -73,26 +73,17 @@ namespace VkBot
             var commandType = new BaseCommand().GetSubClass(src);
             return commandType?.GetResponse(src, user);
         }
-        
-        private SimplifiedMessage Simplify(string src)
-        {
-            src = RemoveExtraSymbols(src);
-            var simplified = new SimplifiedMessage
-            {
-                Words = src.Split(' ').Where(x => x.Any()).ToList()
-            };
-            var first = simplified.Words.First();
-            simplified.Tagged = simplified.Words.Any() && _botNames.Any(s => first.Contains(s, StringComparison.InvariantCultureIgnoreCase));
-            if (simplified.Tagged)
-                simplified.Words = simplified.Words.Skip(1).ToList();
 
-            return simplified;
-        }
-        private string RemoveExtraSymbols(string src)
+        private Response SetupStatusResponse(Response response, Settings settings)
         {
-            var pattern = new Regex("[ ;,\t\r ]|[\n]{2}");
-            src = pattern.Replace(src, " ");
-            return src;
+            response.Content = string.Format(response.Content, _memory.GetPairCount(), settings.Frequency, settings.Status.ToString());
+            return response;
+        }
+
+        private Response SetupUserPickResponse(Response response, long chatId)
+        {
+            response.Content = string.Format(response.Content, _memory.GetRandomUser(chatId));
+            return response;
         }
 
         private readonly string[] _botNames = { "saphire", "сапфир" };

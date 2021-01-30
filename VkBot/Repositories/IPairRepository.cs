@@ -8,7 +8,7 @@ namespace VkBot.Repositories
         public void Save(string first, string second, int meaning);
         public string GetRandom();
         public MessagePair Get(string first, int pos);
-        public IQueryable<MessagePair> GetAll(string first);
+        public IQueryable<MessagePair> GetAll(string first = null);
         public bool Any();
     }
 }

@@ -29,7 +29,7 @@ namespace VkBot
             var random = new Random(DateTime.Now.Millisecond);
             var part = random.Next(2);
 
-            response.Content = Replies[random.Next(Filters.Length)];
+            response.Content = Replies[random.Next(Replies.Length)];
 
             if (part == 0)
                 for (var i = 1; i < index; i++)

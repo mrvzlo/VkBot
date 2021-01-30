@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using VkBot.Entities;
-using VkNet.Model;
 
 namespace VkBot.Repositories
 {
@@ -11,19 +10,30 @@ namespace VkBot.Repositories
 
         public void Save(string first, string second, int meaning)
         {
-            var entity = Select().FirstOrDefault(x =>
-                             x.First.ToLower() == first.ToLower() && x.Second.ToLower() == second.ToLower())
-                         ?? new MessagePair {First = first, Second = second, Count = meaning };
+            if (string.Equals(first, second, StringComparison.OrdinalIgnoreCase))
+                meaning /= 2;
+
+            var entity = Select().FirstOrDefault(x => x.First.ToLower() == first && x.Second.ToLower() == second)
+                         ?? new MessagePair { First = first, Second = second, Count = meaning };
             entity.Count++;
             InsertOrUpdate(entity);
         }
 
-        public MessagePair Get(string first, int pos) => 
+        public MessagePair Get(string first, int pos) =>
             GetAll(first).Skip(pos).FirstOrDefault();
 
-        public IQueryable<MessagePair> GetAll(string first)
+        public IQueryable<MessagePair> GetAll(string first = null)
         {
-            return Select().Where(x => first == null && x.Second.Length == 0 || x.First.ToLower() == first.ToLower());
+            var query = Select();
+            if (string.IsNullOrEmpty(first)) 
+                return query;
+
+            query = query.Where(x => x.First.ToLower() == first);
+            if (query.Any()) 
+                return query;
+
+            query = query.Where(x => x.Second.Length == 0 || x.First.ToLower().Contains(first));
+            return query;
         }
 
         public string GetRandom()

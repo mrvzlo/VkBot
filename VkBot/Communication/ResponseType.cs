@@ -2,6 +2,6 @@
 {
     public enum ResponseType
     {
-        None, Text, Image, SettingChange
+        None, Text, Image, SettingChange, Post, Status, UserPick
     }
 }

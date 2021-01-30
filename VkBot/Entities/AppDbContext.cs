@@ -8,5 +8,7 @@ namespace VkBot.Entities
 
         public DbSet<MessagePair> MessagePairs { get; set; }
         public DbSet<MessageSize> MessageSizes { get; set; }
+        public DbSet<TruthLiePlayer> Members { get; set; }
+        public DbSet<UserChatPair> UserChatPairs { get; set; }
     }
 }

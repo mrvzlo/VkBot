@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using CsQuery;
+using CsQuery.ExtensionMethods.Internal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using VkBot.Communication;
-using VkBot.Controllers;
 using VkNet.Abstractions;
 using VkNet.Model;
 using VkNet.Model.Attachments;
@@ -61,6 +59,9 @@ namespace VkBot
         private async Task Reply(JsonElement obj)
         {
             var settings = Settings.Get(_configuration["Config:MemoryFile"]);
+            if (settings.Status == BotStatus.Mute)
+                return;
+
             var str = obj.ToString();
             var msg = JsonConvert.DeserializeObject<MessageObject>(str).Message;
 
@@ -71,22 +72,22 @@ namespace VkBot
 
                 switch (result.Type)
                 {
-                    case ResponseType.SettingChange:
-                    case ResponseType.None:
-                    case ResponseType.Text:
-                        await SendMessage(result.Content, msg);
-                        return;
                     case ResponseType.Image:
                         await SendPhoto(result.Content, msg);
                         return;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        await SendMessage(result.Content, msg);
+                        return;
                 }
             }
             catch (Exception e)
             {
-                if (msg.FromId == settings.Admin)
-                    await SendMessage(e.Message + "\n" + e.InnerException?.Message, msg);
+                if (msg.FromId != settings.Admin)
+                    return;
+                var error = e.Message + "\n" + e.InnerException?.Message;
+                if (msg.PeerId == settings.Admin)
+                    error += "\n" + e.StackTrace;
+                await SendMessage(error, msg);
             }
         }
 
@@ -100,7 +101,7 @@ namespace VkBot
                 RandomId = new DateTime().Millisecond,
                 PeerId = parent.PeerId,
                 ChatId = parent.ChatId,
-                Message = text,
+                Message = text == null ? "" : $"{text[0].ToUpper()}{text.Substring(1)}",
                 Attachments = attachments
             };
 

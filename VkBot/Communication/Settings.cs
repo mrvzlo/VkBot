@@ -8,13 +8,15 @@ namespace VkBot.Communication
     public class Settings
     {
         public long Admin { get; set; }
-        public Status Status { get; set; }
+        public BotStatus Status { get; set; }
         public string LastWord { get; set; }
         public int Frequency { get => FreqLimit; set => FreqLimit = value > 100 ? 100 : value < 0 ? 0 : value; }
         private int FreqLimit { get; set; }
 
         public UserStatus GetUserStatus(long? id) => id == null ? UserStatus.Simple
             : id.Value == Admin ? UserStatus.Admin : UserStatus.Simple;
+
+        public bool RandomReply() => new Random(DateTime.Now.Millisecond).Next(100 - Frequency) == 0;
 
         public void Save(string path)
         {

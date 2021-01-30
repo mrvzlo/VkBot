@@ -22,7 +22,7 @@ namespace VkBot
 
         public override Response GetResponse(List<string> src, UserStatus _)
         {
-            var response = new Response(ResponseType.Image) { Content = "Что-то связи нет" };
+            var response = new Response(ResponseType.Text) { Content = "Что-то связи нет" };
             var urlAddress = "https://www.anekdot.ru/random/mem/?rank=1";
             var request = (HttpWebRequest)WebRequest.Create(urlAddress);
             var webResponse = (HttpWebResponse)request.GetResponse();
@@ -41,6 +41,9 @@ namespace VkBot
             var images = data[".topicbox > .text > img"];
             var url = images.Select(x => x.GetAttribute("src")).FirstOrDefault(y => !string.IsNullOrEmpty(y));
             response.Content = url ?? "Попробуй ещё раз";
+
+            if (!string.IsNullOrEmpty(url))
+                response.Type = ResponseType.Image;
 
             return response;
         }

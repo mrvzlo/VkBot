@@ -1,6 +1,4 @@
-﻿using VkBot.Entities;
-
-namespace VkBot.Repositories
+﻿namespace VkBot.Repositories
 {
     public interface ISizeRepository
     {

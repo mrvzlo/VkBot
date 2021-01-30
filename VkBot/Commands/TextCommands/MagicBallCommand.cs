@@ -8,7 +8,7 @@ namespace VkBot
         public MagicBallCommand()
         {
             Priority = Priority.Low;
-            Filters = new []{"ответь", "скажи" };
+            Filters = new []{"ответь" };
             Replies = new[]
             {
                 "Бесспорно",
